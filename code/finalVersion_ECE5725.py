@@ -312,7 +312,6 @@ try:
                                     prompt = chr(ord('0') + random.randint(0,9))
                                 else:
                                     num = random.randint(0,24)
-                                    while num == 9 or num == 18 or num==19: num = random.randint(0,24)
                                     prompt = chr(ord('A') + num)
                                 correct_count = 0
                                 box_color = (255,0,0)
@@ -324,7 +323,6 @@ try:
                                     prompt = chr(ord('0') + random.randint(0,9))
                                 else:
                                     num = random.randint(0,24)
-                                    while num == 9 or num == 18 or num==19: num = random.randint(0,24)
                                     prompt = chr(ord('A') + num)
                                 correct_count = 0
                                 correct_time = 0
@@ -347,7 +345,6 @@ try:
                                     if modelType==0: 
                                         modelType =1
                                         num = random.randint(0,24)
-                                        while num == 9 or num == 18 or num==19: num = random.randint(0,24)
                                         prompt = chr(ord('A') + num)
                                     else: 
                                         modelType = 0
