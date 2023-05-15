@@ -85,7 +85,9 @@
       <div style="text-align:center; font-size:18px">
         <h2>Project Objectives</h2>
         <ul style="text-align: left;padding: 0px 30px;">
-          <li>TODO</li>
+          <li>Use computer vision to reliably track and capture images of hands from a video feed</li>
+          <li>Train and tune models to classify images to their corresponding sign</li>
+          <li>Implement a UI for our program so that it can be used as an educational game</li>
         </ul>
       </div>
 
@@ -93,20 +95,39 @@
     <div style="text-align:center; font-size:18px">
       <h2>Design and Implementation</h2>
       <h3>Hardware</h3>
-      <p style="text-align: left;padding: 0px 30px; text-indent: 60px">TODO</p>
-      <h3>Software</h3>
-      <p style="text-align: left;padding: 0px 30px; text-indent: 60px">TODO</p>
+      <p style="text-align: left;padding: 0px 30px; text-indent: 60px">Since our project is heavily software focused, our hardware consisted of three major components: Raspberry Pi 4B, Raspberry Pi High Quality (HQ) Camera and lens, and a monitor. The HQ Camera is connected to the Raspberry Pi through the specialized camera ribbon cable port embedded in the Pi’s board. This specialized port is specifically designed as an easy interface with any raspberry pi camera on the market. The HQ Camera also requires a lens in order to properly function. Our team personally owned a compatible Arducam 6mm lens which gave our camera a clear and wide field of view without distorting the image. Utilizing the camera as a video feed input, the Pi processes the information and creates an overlay over the video feed which is then displayed on the monitor. Additionally, to make our project more aesthetic, we 3D printed a Raspberry Pi and HQ camera case, which we found from open-source CAD models online, and mounted the case onto a light so that the video feed always had sufficient lighting.</p>
+      <h3>Off-device Machine Learning Program</h3>
+      <p style="text-align: left;padding: 0px 30px; text-indent: 60px">A large part of our project's software is classification through machine learning. We did all of the dataset preparation as well as the machine learning model creation and training off the device, on a laptop using Jupyter Notebook. The final dataset we used came in raw 200x200 images, so we had to process this dataset to extract feature vectors from each image to be used by the model. To generate a useable dataset to feed into the models, we wrote a program that would loop through all the raw images in the dataset, load them into 2D pixel arrays, perform hand detection using the MediaPipe solutions library, and generate a feature vector from the positions of the 21 hand landmarks, which represent the joints, to save into a .csv file along with the correct label. Other libraries used for dataset generation were pandas for loading and saving .csv files, NumPy for general array manipulation, pillow for loading images from a path, and os for accessing all images in a directory.</p>
+      <p style="text-align: left;padding: 0px 30px; text-indent: 60px">After generating the .csv files which contained the label and feature vector for all useable images from our dataset, we used the TensorFlow library to create a machine learning model and train it. We went with 3 convolutional layers with max pooling, batch normalization, and dropout layers, and also dense layers at the end, ending up with the total weights for each label, then the label with the highest weight was picked for the classification. The batch normalization and dropout layers prevent overfitting, which was a big problem at the beginning. It took a lot of trial and error to tune the parameters, but the strategy for the convolutional layers was to start off with fewer filters that were larger, then have more filters that were smaller deeper into the network. Then the max pooling layers are used to not only reduce the output sizes of the convolutional layers but also to retain the features with the max weight. Overall, we settled for a very specific model, but imagine that other model compositions could work just as well, and if time permitted, would have played around with different layers and parameters to further improve the classification accuracy. After training the model using the dataset we generated, we converted the model from TensorFlow to TensorFlow lite, as that was what the RPi would be running due to its lightweight nature.</p>
+      <h3>Main RPi Program</h3>
+      <p style="text-align: left;padding: 0px 30px; text-indent: 60px">We used an incremental approach when coding the main RPi program. First, we worked on getting the camera to display the feed and capture images. We used the PiCamera2 library to interface with our Raspberry Pi camera, which involved reading a lot of documentation and testing things out because PiCamera2 was a fairly new library, replacing PiCamera. Then, after we had a working program that could open the camera preview and take continuous images without disrupting the preview, we moved on to adding in hand detection using MediaPipe. The code here was fairly straightforward as it was the same as what was used off-device to generate feature vectors from the raw images of the dataset. The program continuously took still images from the camera, converted them into a 2D pixel array, and fed them into the MediaPipe hands solution. This is also when we experimented with adding overlays and other graphical elements to the camera preview in order to have a bounding box following the detected hand. In order to do so, we had to modify the camera buffer directly using a callback function to draw the graphical elements onto each frame of the camera image. Finally, we imported the TensorFlow lite models we created and trained off-device, converted the hand landmarks to a feature vector the same way as how we generated the training set, and fed it through the model to produce a classification result, displaying it on the screen. We decided to have two separate models for letters and numbers since there were a lot of similar and overlapping gestures between the two, such as with 0 and O, 1 and D, and 6 and W. Therefore, we implemented the ability to switch between two modes, classifying numbers vs letters.</p>
+      <p style="text-align: left;padding: 0px 30px; text-indent: 60px">After we made sure that our program was successfully able to identify a hand and reliably classify ASL hand gestures, we worked on gamifying the program. We created a cool loading screen to load the camera and other setups and displayed the hand bounding box as well as the currently classified sign detected by the model. We kept track of variables such as the current score, the current mode (numbers vs letters), a prompt which is what sign the player is trying to create, a timestamp for when the prompt was given, and a timestamp for when the correct answer was identified. In order to check if a player was signing the correct sign given by the prompt, we perform continuous sequential classifications and check if the correct label has been detected eight times in a row. This means that the player needs to hold the correct sign for around one second for it to register and gain a point. Then, the time taken is displayed with a message, and the prompt is regenerated and timer reset. There is a timer with how much time has passed for the current prompt, and the score is reset to 0 after a player has not successfully signed the correct sign in 30 seconds, which generates a new prompt. We implemented a menu on the bottom quarter of the screen, where if the detected hand is found in the menu zone, a white circle at the tip of the index finger is drawn instead of the bounding box. Then, we used two boxes on the left and right of the screen for the menu items. The player can hold the index finger in the box for 3 seconds for the selection to be confirmed. We used this to quit out of the program and switch the mode between numbers and letters. We made sure to make the user interface and information displayed as intuitive as possible, having the bounding box change from red to green when a correct sign is displayed, and a UI bar at the top that displays success and skip messages.</p>
     </div>
 
     <hr id='figures'>
     <div style="text-align:center; font-size:18px">
       <h2>Figures</h2>
       <div style="text-align:center;">
-        <img class="img-rounded" src="TODO" alt="TODO" style="width:80%;">
-        <h4>A figure</h4>
+        <img class="img-rounded" src="pics/numPrompt.jpg" alt="Number being prompted" style="width:80%;">
+        <h4>Program prompting user to sign the number seven</h4>
         <br>
-        <img class="img-rounded" src="TODO" alt="TODO" style="width:80%;">
-        <h4>Another figure</h4>
+        <img class="img-rounded" src="pics/correctNum.jpg" alt="Correct number" style="width:80%;">
+        <h4>User signs seven as prompted and time is displayed</h4>
+        <br>
+        <img class="img-rounded" src="pics/correctLetter.jpg" alt="Correct number" style="width:80%;">
+        <h4>User signs L as prompted and time is displayed</h4>
+        <br>
+        <img class="img-rounded" src="pics/wrongLetter.jpg" alt="Wrong Letter" style="width:80%;">
+        <h4>User makes the incorrect sign correspondiing to the prompt</h4>
+        <br>
+        <img class="img-rounded" src="pics/skip.jpg" alt="Skip functionality" style="width:80%;">
+        <h4>Program skips becuase user does not make the correct sign within 30 seconds</h4>
+        <br>
+        <img class="img-rounded" src="pics/menuBar.jpg" alt="Menu bar" style="width:80%;">
+        <h4>Demonstration of functionality of menu bar</h4>
+        <br>
+        <img class="img-rounded" src="pics/hardware.jpg" alt="Project hardware" style="width:80%;">
+        <h4>Our hardware setup</h4>
         <br>
       </div>
     </div>
@@ -114,26 +135,24 @@
     <hr id='testing'>
     <div style="text-align:center; font-size:18px">
       <h2>Debugging and Testing</h2>
-      <h3>Installations and Dependencies</h3>
       <p style="text-align: left;padding: 0px 30px; text-indent: 60px">TODO</p>
-      <h3>Datasets</h3>
       <p style="text-align: left;padding: 0px 30px; text-indent: 60px">TODO</p>
     </div>
 
     <hr id='result'>
     <div style="text-align:center; font-size:18px">
       <h2>Results and Future Developement</h2>
-      <p style="text-align: left;padding: 0px 30px; text-indent: 60px">TODO</p>
+      <p style="text-align: left;padding: 0px 30px; text-indent: 60px">In the end, we accomplished what we originally sought to complete: implement a program that can reliably detect and classify simple American Sign Language and gamify it into a learning game. Our machine learning models that we constructed and trained provided us with a high classification accuracy with only signs for letters S and T being hard to differentiate because of their similarities to other signs like E, M, and N.</p>
+      <p style="text-align: left;padding: 0px 30px; text-indent: 60px">Additionally, the game that we developed by creating an overlay for the video feed gave users a simple way of learning ASL. The game was successfully designed to tell the user what sign to make and how quickly the user made the sign-in, The user can increment their score by correctly making the sign, or if a thirty second time frame passes before the correct sign is made, then the score will reset to zero and the sign directive will produce a new random sign. The user interface was designed to be simple and clear so that the user can easily determine what sign the program directs the user to make and also know what sign the user is currently making. We also implemented features so that the user can easily switch between the letters or numbers model and quit out of the program entirely.</p>
+      <p style="text-align: left;padding: 0px 30px; text-indent: 60px">Like all machine learning models, there is always room for improvement. The current model’s classification is not flexible enough to accommodate different angles of the hand, and it still has some trouble differentiating between similar letters like E, M, N, S, and T. This is primarily due to the quality of the dataset used. Our dataset is extremely small, with only 70 images per label. The dataset images are also not very diverse with lighting conditions, hand sizes and colors, rotations, background, and noise/blurriness. The model also currently tries to classify every possible hand sign into one of the letters/numbers, which is not good for an educational game where we want to make sure the sign is precisely correct. So we could also extend the dataset to include signs that do not fall into any of the provided categories to identify correctly when a sign is incorrect.</p>
+      <p style="text-align: left;padding: 0px 30px; text-indent: 60px">Another improvement we could make is to extend the project from just classifying still images to being able to recognize moving gestures. In its current state, our model excludes the classification of J and Z because they require movement to correctly sign them. Furthermore, we can also further classify more complex signs like greetings and commonly used phrases, rather than just the alphabet and single-digit numbers.</p>
+      <p style="text-align: left;padding: 0px 30px; text-indent: 60px">Our game aspect is a rather simple one, and we had ideas on how to develop it even further but were unfortunately unable to do so because of time constraints. We thought of implementing a head-to-head game where two users can face off and see who can make the sign the fastest. This can be done rather easily by simply setting the MediaPipe software to detect two hands in the video feed and feed both hands through our ML models. We also thought of ideas like spelling words out by completing a sequence of signs.</p>
     </div>
 
     <hr id='work'>
     <div class="row" style="text-align:center; font-size:18px">
       <h2>Work Distribution</h2>
-      <!-- <div style="text-align:center;">
-        <img class="img-rounded" src="pics/group.jpg" alt="Generic placeholder image" style="width:80%;">
-        <h4>Project group picture</h4>
-      </div> -->
-      <p style="text-align: center; padding: 0px 30px;">TODO</p>
+      <p style="text-align: center; padding: 0px 30px;">All group members worked together in the lab to complete this project. Bianca Tseng dedicated additional time to train the ML models. Jacob Lashin provided and set up the 3D-printed case, light source, HQ Camera, and lens. Kishore Kannan was in charge of SD card backups and the installation of the new OS that we used for this project.</p>
       <br>
       <div class="col-md-4" style="font-size:16px">
         <img class="img-rounded" src="pics/biancaPic.jpg" alt="Image of Bianca Tseng" width="auto" height="240">
@@ -175,7 +194,6 @@
         <li><a href="https://developers.google.com/mediapipe/solutions/vision/hand_landmarker">MediaPipe Hands Landmarks</a></li>
         <li><a href="https://www.kaggle.com/datasets/datamunge/sign-language-mnist?resource=download">First Training Image Dataset (28x28 resolution)</a></li>
         <li><a href="https://www.kaggle.com/datasets/ayuraj/asl-dataset">Final Training Image Dataset</a></li>
-        <li><a href="TODO">TODO</a></li>
       </ul>
       <br>
     </div>
@@ -190,11 +208,9 @@
         <br>
         <a href="code/model_letters.tflite">Letters tflite Model</a>
         <br>
-        <a href="TODO">Jupyter Notebook Model Training Code</a>
+        <a href="code/code_training_model.pdf">Jupyter Notebook Model Training Code</a>
         <br>
-        <a href="TODO">Jupyter Notebook Dataset Generation Code</a>
-        <br>
-        <a href="TODO">TODO</a>
+        <a href="code/code_generating_datasets.pdf">Jupyter Notebook Dataset Generation Code</a>
       </p>
 
     <br>
